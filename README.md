@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Approval Rules
-        uses: kazukitaninaka/approval-rules@v1
+        uses: WinTicket/approval-rules@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           approval-rules: |

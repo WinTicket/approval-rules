@@ -1,6 +1,6 @@
 name: "Approval Rules"
 description: "A GitHub Action to enforce conditional approval rules on pull requests"
-author: "kazukitaninaka"
+author: "WinTicket"
 branding:
   icon: "check-circle"
   color: "green"

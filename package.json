@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kazukitaninaka/approval-rules.git"
+    "url": "git+https://github.com/WinTicket/approval-rules.git"
   },
   "keywords": [
     "GitHub",
@@ -23,7 +23,7 @@
     "JavaScript",
     "TypeScript"
   ],
-  "author": "kazukitaninaka",
+  "author": "WinTicket",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "1.10.1",

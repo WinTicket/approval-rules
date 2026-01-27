@@ -1,0 +1,43 @@
+{
+  "name": "approval-rules",
+  "version": "1.0.0",
+  "description": "A GitHub Action for managing approval rules",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build src/index.ts -o dist --license licenses.txt",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "biome format --write ./src",
+    "lint": "biome lint ./src",
+    "check": "biome check ./src",
+    "package": "ncc build src/index.ts -o dist --license licenses.txt",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kazukitaninaka/approval-rules.git"
+  },
+  "keywords": [
+    "GitHub",
+    "Actions",
+    "JavaScript",
+    "TypeScript"
+  ],
+  "author": "kazukitaninaka",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "1.10.1",
+    "@actions/github": "6.0.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@octokit/types": "16.0.0",
+    "@octokit/webhooks-types": "7.6.1",
+    "@types/node": "20.10.5",
+    "@vercel/ncc": "0.38.1",
+    "lefthook": "2.0.13",
+    "typescript": "5.9.3",
+    "vitest": "4.0.16"
+  },
+  "packageManager": "pnpm@10.24.0"
+}

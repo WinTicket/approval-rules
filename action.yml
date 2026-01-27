@@ -1,0 +1,18 @@
+name: "Approval Rules"
+description: "A GitHub Action to enforce conditional approval rules on pull requests"
+author: "kazukitaninaka"
+branding:
+  icon: "check-circle"
+  color: "green"
+
+inputs:
+  github-token:
+    description: "GitHub token for API access"
+    required: false
+    default: ${{ github.token }}
+  approval-rules:
+    description: "JSON string of approval rules to enforce"
+    required: true
+runs:
+  using: "node20"
+  main: "dist/index.js"

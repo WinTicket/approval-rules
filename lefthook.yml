@@ -1,0 +1,7 @@
+pre-commit:
+  commands:
+    check:
+      glob: "*.{js,ts,json}"
+      run: pnpm check
+    build:
+      run: pnpm build

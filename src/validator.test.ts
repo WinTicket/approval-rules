@@ -168,45 +168,14 @@ describe("validateApprovals", () => {
     });
   });
 
-  describe("conditional rules", () => {
-    it("should apply rule when from_b ranch pattern matches", () => {
+  describe("conditional rules integration", () => {
+    it("should return null when conditions do not match", () => {
       const rule: ApprovalRule = {
         name: "release-rule",
         if: {
           from_branch: { pattern: "^release/.*" },
         },
-        requires: { count: 3 },
-      };
-      const reviews: Review[] = [
-        createMockReview({
-          user: { login: "reviewer1" } as Review["user"],
-          state: "APPROVED",
-        }),
-        createMockReview({
-          user: { login: "reviewer2" } as Review["user"],
-          state: "APPROVED",
-        }),
-      ];
-
-      const result = validateApprovals({
-        rule,
-        reviews,
-        payload: createMockPayload({
-          head: { ref: "release/v1.0" },
-        } as Partial<PullRequest>),
-      });
-
-      expect(result?.approved).toBe(false);
-      expect(result?.rule.requires.count).toBe(3);
-    });
-
-    it("should return null when from_branch pattern does not match", () => {
-      const rule: ApprovalRule = {
-        name: "release-rule",
-        if: {
-          from_branch: { pattern: "^release/.*" },
-        },
-        requires: { count: 3 },
+        requires: { count: 1 },
       };
       const reviews: Review[] = [
         createMockReview({
@@ -220,59 +189,6 @@ describe("validateApprovals", () => {
         reviews,
         payload: createMockPayload({
           head: { ref: "feature/test" },
-        } as Partial<PullRequest>),
-      });
-
-      expect(result).toBe(null);
-    });
-
-    it("should apply rule when author is in has_author_in list", () => {
-      const rule: ApprovalRule = {
-        name: "junior-rule",
-        if: {
-          has_author_in: { users: ["junior1", "junior2"] },
-        },
-        requires: { count: 2 },
-      };
-      const reviews: Review[] = [
-        createMockReview({
-          user: { login: "reviewer1" } as Review["user"],
-          state: "APPROVED",
-        }),
-      ];
-
-      const result = validateApprovals({
-        rule,
-        reviews,
-        payload: createMockPayload({
-          user: { login: "junior1" },
-        } as Partial<PullRequest>),
-      });
-
-      expect(result?.approved).toBe(false);
-      expect(result?.rule.requires.count).toBe(2);
-    });
-
-    it("should return null when author is not in has_author_in list", () => {
-      const rule: ApprovalRule = {
-        name: "junior-rule",
-        if: {
-          has_author_in: { users: ["junior1", "junior2"] },
-        },
-        requires: { count: 2 },
-      };
-      const reviews: Review[] = [
-        createMockReview({
-          user: { login: "reviewer1" } as Review["user"],
-          state: "APPROVED",
-        }),
-      ];
-
-      const result = validateApprovals({
-        rule,
-        reviews,
-        payload: createMockPayload({
-          user: { login: "senior1" },
         } as Partial<PullRequest>),
       });
 

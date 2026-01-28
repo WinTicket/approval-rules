@@ -14,7 +14,7 @@ export const evaluateConditions = (
 
   for (const [key, config] of Object.entries(ruleIf)) {
     const condition = conditionRegistry.get(key);
-    if (condition && !condition.evaluate(config, context)) {
+    if (condition != null && !condition.evaluate(config, context)) {
       return false;
     }
   }

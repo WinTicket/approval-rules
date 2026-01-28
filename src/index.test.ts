@@ -40,7 +40,6 @@ describe("GitHub Action main", () => {
         "approval-rules": JSON.stringify([
           { name: "default", if: {}, requires: { count: 2 } },
         ]),
-        "default-approve-count": "1",
       };
       return inputs[name] || "";
     });
@@ -69,6 +68,15 @@ describe("GitHub Action main", () => {
 
     await import("./index");
     await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockGetOctokit("test-token").rest.repos.createCommitStatus).toHaveBeenCalledWith({
+      owner: "test-owner",
+      repo: "test-repo",
+      sha: "abc123",
+      state: "success",
+      context: "PR Approval Check",
+      description: "Approved (3/2)",
+    });
 
     expect(mockSetFailed).not.toHaveBeenCalled();
   });

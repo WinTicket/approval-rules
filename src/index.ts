@@ -17,9 +17,28 @@ const run = async (): Promise<void> => {
     const token = core.getInput('github-token', { required: true });
     const approvalRules = core.getInput('approval-rules', { required: true });
 
-    const parsedApprovalRules = JSON.parse(approvalRules) as ApprovalRule[];
-
     core.info(`eventName: ${context.eventName}`);
+
+    const octokit = getOctokit(token);
+
+    if (context.eventName === 'merge_group') {
+      const octokit = getOctokit(token);
+      const headSha = (context.payload.merge_group as { head_sha: string }).head_sha;
+
+      await octokit.rest.repos.createCommitStatus({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        sha: headSha,
+        state: 'success',
+        context: 'PR Approval Check',
+        description: 'Skipped (merge queue)',
+      });
+
+      core.info('Merge queue detected, auto-approved');
+      return;
+    }
+
+    const parsedApprovalRules = JSON.parse(approvalRules) as ApprovalRule[];
 
     const payload = parseContext(context);
 
@@ -30,7 +49,6 @@ const run = async (): Promise<void> => {
 
     core.info(`prMeta: ${JSON.stringify(prMeta)}`);
 
-    const octokit = getOctokit(token);
     const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
       owner: context.repo.owner,
       repo: context.repo.repo,

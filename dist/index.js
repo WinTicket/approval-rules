@@ -52525,15 +52525,29 @@ const run = async () => {
     try {
         const token = core.getInput('github-token', { required: true });
         const approvalRules = core.getInput('approval-rules', { required: true });
-        const parsedApprovalRules = JSON.parse(approvalRules);
         core.info(`eventName: ${github_1.context.eventName}`);
+        const octokit = (0, github_1.getOctokit)(token);
+        if (github_1.context.eventName === 'merge_group') {
+            const octokit = (0, github_1.getOctokit)(token);
+            const headSha = github_1.context.payload.merge_group.head_sha;
+            await octokit.rest.repos.createCommitStatus({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                sha: headSha,
+                state: 'success',
+                context: 'PR Approval Check',
+                description: 'Skipped (merge queue)',
+            });
+            core.info('Merge queue detected, auto-approved');
+            return;
+        }
+        const parsedApprovalRules = JSON.parse(approvalRules);
         const payload = parseContext(github_1.context);
         const prMeta = {
             number: 'number' in payload ? payload.number : payload.pull_request?.number,
             headSha: 'head' in payload ? payload.head.sha : payload.pull_request?.head?.sha,
         };
         core.info(`prMeta: ${JSON.stringify(prMeta)}`);
-        const octokit = (0, github_1.getOctokit)(token);
         const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,

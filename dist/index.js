@@ -52548,17 +52548,26 @@ const run = async () => {
             headSha: 'head' in payload ? payload.head.sha : payload.pull_request?.head?.sha,
         };
         core.info(`prMeta: ${JSON.stringify(prMeta)}`);
-        const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
-            owner: github_1.context.repo.owner,
-            repo: github_1.context.repo.repo,
-            pull_number: prMeta.number,
-        });
+        const [reviews, files] = await Promise.all([
+            octokit.paginate(octokit.rest.pulls.listReviews, {
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                pull_number: prMeta.number,
+            }),
+            octokit.paginate(octokit.rest.pulls.listFiles, {
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                pull_number: prMeta.number,
+            }),
+        ]);
+        const changedFiles = files.map((file) => file.filename);
         const satisfiedRule = parsedApprovalRules
             .map((rule) => {
             return (0, validator_1.validateApprovals)({
                 rule,
                 reviews,
                 payload,
+                changedFiles,
             });
         })
             .find((result) => result != null);
@@ -52630,7 +52639,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.evaluateConditions = void 0;
 const from_branch_1 = __nccwpck_require__(887);
 const has_author_in_1 = __nccwpck_require__(2940);
-const conditions = [from_branch_1.fromBranchCondition, has_author_in_1.hasAuthorInCondition];
+const only_changed_files_1 = __nccwpck_require__(4370);
+const conditions = [
+    from_branch_1.fromBranchCondition,
+    has_author_in_1.hasAuthorInCondition,
+    only_changed_files_1.onlyChangedFilesCondition,
+];
 const conditionRegistry = new Map(conditions.map((c) => [c.name, c]));
 const evaluateConditions = (ruleIf, context) => {
     if (ruleIf == null)
@@ -52648,6 +52662,26 @@ exports.evaluateConditions = evaluateConditions;
 
 /***/ }),
 
+/***/ 4370:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.onlyChangedFilesCondition = void 0;
+exports.onlyChangedFilesCondition = {
+    name: 'only_changed_files',
+    evaluate: (config, ctx) => {
+        if (ctx.changedFiles.length === 0)
+            return false;
+        const pathRegexes = config.paths.map((path) => new RegExp(path));
+        return ctx.changedFiles.every((file) => pathRegexes.some((regex) => regex.test(file)));
+    },
+};
+
+
+/***/ }),
+
 /***/ 203:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -52656,7 +52690,7 @@ exports.evaluateConditions = evaluateConditions;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateApprovals = void 0;
 const rules_1 = __nccwpck_require__(4835);
-const validateApprovals = ({ rule, reviews, payload, }) => {
+const validateApprovals = ({ rule, reviews, payload, changedFiles, }) => {
     // get the latest review status for each user
     const latestReviewByUser = new Map();
     for (const review of reviews) {
@@ -52676,6 +52710,7 @@ const validateApprovals = ({ rule, reviews, payload, }) => {
     const context = {
         fromBranch: 'head' in payload ? payload.head.ref : (payload.pull_request?.head?.ref ?? ''),
         author: 'user' in payload ? (payload.user?.login ?? '') : (payload.pull_request?.user?.login ?? ''),
+        changedFiles,
     };
     const isTarget = (0, rules_1.evaluateConditions)(rule.if, context);
     // NOTE: matches nothing when if is set but none of the conditions are met

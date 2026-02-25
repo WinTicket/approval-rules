@@ -6,10 +6,12 @@ export const validateApprovals = ({
   rule,
   reviews,
   payload,
+  changedFiles,
 }: {
   rule: ApprovalRule;
   reviews: Review[];
   payload: PullRequest | PullRequestReviewEvent;
+  changedFiles: string[];
 }): ValidationResult | null => {
   // get the latest review status for each user
   const latestReviewByUser = new Map<string, { submittedAt: Date; state: string }>();
@@ -39,6 +41,7 @@ export const validateApprovals = ({
     fromBranch: 'head' in payload ? payload.head.ref : (payload.pull_request?.head?.ref ?? ''),
     author:
       'user' in payload ? (payload.user?.login ?? '') : (payload.pull_request?.user?.login ?? ''),
+    changedFiles,
   };
 
   const isTarget = evaluateConditions(rule.if, context);

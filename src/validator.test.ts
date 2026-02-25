@@ -69,6 +69,7 @@ describe("validateApprovals", () => {
         rule,
         reviews,
         payload: createMockPayload(),
+        changedFiles: [],
       });
 
       expect(result?.approved).toBe(true);
@@ -96,6 +97,7 @@ describe("validateApprovals", () => {
         rule,
         reviews,
         payload: createMockPayload(),
+        changedFiles: [],
       });
 
       expect(result?.approved).toBe(false);
@@ -132,6 +134,7 @@ describe("validateApprovals", () => {
         rule,
         reviews,
         payload: createMockPayload(),
+        changedFiles: [],
       });
 
       expect(result?.approved).toBe(false);
@@ -161,6 +164,7 @@ describe("validateApprovals", () => {
         rule,
         reviews,
         payload: createMockPayload(),
+        changedFiles: [],
       });
 
       expect(result?.approved).toBe(true);
@@ -190,6 +194,7 @@ describe("validateApprovals", () => {
         payload: createMockPayload({
           head: { ref: "feature/test" },
         } as Partial<PullRequest>),
+        changedFiles: [],
       });
 
       expect(result).toBe(null);
@@ -215,6 +220,7 @@ describe("validateApprovals", () => {
         rule,
         reviews,
         payload: createMockPayload(),
+        changedFiles: [],
       });
 
       expect(result?.approved).toBe(false);

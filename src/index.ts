@@ -49,11 +49,20 @@ const run = async (): Promise<void> => {
 
     core.info(`prMeta: ${JSON.stringify(prMeta)}`);
 
-    const reviews = await octokit.paginate(octokit.rest.pulls.listReviews, {
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      pull_number: prMeta.number,
-    });
+    const [reviews, files] = await Promise.all([
+      octokit.paginate(octokit.rest.pulls.listReviews, {
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        pull_number: prMeta.number,
+      }),
+      octokit.paginate(octokit.rest.pulls.listFiles, {
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        pull_number: prMeta.number,
+      }),
+    ]);
+
+    const changedFiles = files.map((file) => file.filename);
 
     const satisfiedRule = parsedApprovalRules
       .map((rule) => {
@@ -61,6 +70,7 @@ const run = async (): Promise<void> => {
           rule,
           reviews,
           payload,
+          changedFiles,
         });
       })
       .find((result) => result != null);

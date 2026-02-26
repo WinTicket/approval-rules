@@ -1,11 +1,11 @@
 import * as core from '@actions/core';
 import type * as github from '@actions/github';
 import { context, getOctokit } from '@actions/github';
-import type { PullRequest, PullRequestReviewEvent } from '@octokit/webhooks-types';
+import type { PullRequest } from '@octokit/webhooks-types';
 import type { ApprovalRule } from './types';
 import { validateApprovals } from './validator';
 
-const parseContext = (context: typeof github.context): PullRequest | PullRequestReviewEvent => {
+const parseContext = (context: typeof github.context): PullRequest => {
   if (context.eventName === 'pull_request' || context.eventName === 'pull_request_review') {
     return context.payload.pull_request as PullRequest;
   }
@@ -43,8 +43,8 @@ const run = async (): Promise<void> => {
     const payload = parseContext(context);
 
     const prMeta = {
-      number: 'number' in payload ? payload.number : payload.pull_request?.number,
-      headSha: 'head' in payload ? payload.head.sha : payload.pull_request?.head?.sha,
+      number: payload.number,
+      headSha: payload.head.sha,
     };
 
     core.info(`prMeta: ${JSON.stringify(prMeta)}`);

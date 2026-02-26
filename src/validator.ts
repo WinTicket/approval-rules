@@ -1,4 +1,4 @@
-import type { PullRequest, PullRequestReviewEvent } from '@octokit/webhooks-types';
+import type { PullRequest } from '@octokit/webhooks-types';
 import { type RuleContext, evaluateConditions } from './rules';
 import type { ApprovalRule, Review, ValidationResult } from './types';
 
@@ -10,7 +10,7 @@ export const validateApprovals = ({
 }: {
   rule: ApprovalRule;
   reviews: Review[];
-  payload: PullRequest | PullRequestReviewEvent;
+  payload: PullRequest;
   changedFiles: string[];
 }): ValidationResult | null => {
   // get the latest review status for each user
@@ -38,9 +38,8 @@ export const validateApprovals = ({
   const approved = approvalCount >= rule.requires.count;
 
   const context: RuleContext = {
-    fromBranch: 'head' in payload ? payload.head.ref : (payload.pull_request?.head?.ref ?? ''),
-    author:
-      'user' in payload ? (payload.user?.login ?? '') : (payload.pull_request?.user?.login ?? ''),
+    fromBranch: payload.head.ref,
+    author: payload.user?.login ?? '',
     changedFiles,
   };
 

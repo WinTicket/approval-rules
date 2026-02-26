@@ -2,10 +2,12 @@
 
 A GitHub Action that enforces conditional approval rules on pull requests. Require different approval counts based on branch names or PR authors.
 
+API design is inspired by [policy-bot](https://github.com/palantir/policy-bot).
+
 ## Features
 
 - Define multiple approval rules
-- Conditional rules (branch name patterns, author lists)
+- Conditional rules (branch name patterns, author lists, changed file patterns)
 - Uses only the latest review status per user
 - Creates Commit Status to show approval status
 
@@ -53,6 +55,17 @@ jobs:
                 }
               },
               {
+                "name": "docs-only",
+                "if": {
+                  "only_changed_files": {
+                    "paths": ["^docs/", "^\\.github/"]
+                  }
+                },
+                "requires": {
+                  "count": 1
+                }
+              },
+              {
                 "name": "default",
                 "requires": {
                   "count": 1
@@ -77,10 +90,13 @@ Each rule has the following structure:
   "name": "string",
   "if": {
     "from_branch": {
-      "pattern": "string"
+      "pattern": "string(regex)"
     },
     "has_author_in": {
       "users": ["string"]
+    },
+    "only_changed_files": {
+      "paths": ["string (regex)"]
     }
   },
   "requires": {
@@ -93,6 +109,7 @@ Each rule has the following structure:
 - `if`: Conditions (optional, omit to match all PRs)
   - `from_branch.pattern`: Regex pattern for branch name
   - `has_author_in.users`: List of usernames
+  - `only_changed_files.paths`: List of regex patterns matched against changed file paths
 - `requires.count`: Required number of approvals
 
 ### Condition Behavior
@@ -100,7 +117,8 @@ Each rule has the following structure:
 - `if` omitted or empty: Matches all PRs
 - `from_branch` only: Applies when branch name matches the pattern
 - `has_author_in` only: Applies when PR author is in the list
-- Both set: Applies when both conditions are met
+- `only_changed_files` only: Applies when all changed files match at least one of the patterns
+- Multiple conditions set: Applies when all conditions are met
 
 Rules are evaluated in array order. The first rule that meets the approval condition creates a Commit Status.
 
@@ -134,6 +152,22 @@ Rules are evaluated in array order. The first rule that meets the approval condi
   },
   "requires": {
     "count": 2
+  }
+}
+```
+
+**Require 1 approval for docs-only changes:**
+
+```json
+{
+  "name": "docs-only",
+  "if": {
+    "only_changed_files": {
+      "paths": ["^docs/", "\\.md$"]
+    }
+  },
+  "requires": {
+    "count": 1
   }
 }
 ```

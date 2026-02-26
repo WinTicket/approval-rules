@@ -13,6 +13,9 @@ export type ApprovalRule = {
     has_author_in?: {
       users: string[];
     };
+    only_changed_files?: {
+      paths: string[];
+    };
   };
   requires: {
     count: number;

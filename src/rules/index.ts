@@ -1,8 +1,13 @@
 import { fromBranchCondition } from './from_branch';
 import { hasAuthorInCondition } from './has_author_in';
+import { onlyChangedFilesCondition } from './only_changed_files';
 import type { RuleCondition, RuleContext } from './types';
 
-const conditions: RuleCondition[] = [fromBranchCondition, hasAuthorInCondition];
+const conditions: RuleCondition[] = [
+  fromBranchCondition,
+  hasAuthorInCondition,
+  onlyChangedFilesCondition,
+];
 
 const conditionRegistry = new Map<string, RuleCondition>(conditions.map((c) => [c.name, c]));
 

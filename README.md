@@ -190,6 +190,10 @@ Rules are evaluated in array order. The first rule that meets the approval condi
 }
 ```
 
+## Limitations
+
+This action uses Commit Status to enforce approval rules. Since `GITHUB_TOKEN` has permission to create commit statuses, a PR author could potentially bypass the check by directly writing a success status via the API. If you need stronger guarantees against this, consider using [policy-bot](https://github.com/palantir/policy-bot), which runs as a separate GitHub App with its own credentials.
+
 ## Development
 
 ```bash

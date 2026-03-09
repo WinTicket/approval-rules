@@ -2,7 +2,8 @@ import * as core from '@actions/core';
 import type * as github from '@actions/github';
 import { context, getOctokit } from '@actions/github';
 import type { PullRequest } from '@octokit/webhooks-types';
-import type { ApprovalRule } from './types';
+import * as v from 'valibot';
+import { ApprovalRulesSchema } from './types';
 import { validateApprovals } from './validator';
 
 const parseContext = (context: typeof github.context): PullRequest => {
@@ -15,14 +16,12 @@ const parseContext = (context: typeof github.context): PullRequest => {
 const run = async (): Promise<void> => {
   try {
     const token = core.getInput('github-token', { required: true });
-    const approvalRules = core.getInput('approval-rules', { required: true });
 
     core.info(`eventName: ${context.eventName}`);
 
     const octokit = getOctokit(token);
 
     if (context.eventName === 'merge_group') {
-      const octokit = getOctokit(token);
       const headSha = (context.payload.merge_group as { head_sha: string }).head_sha;
 
       await octokit.rest.repos.createCommitStatus({
@@ -38,9 +37,27 @@ const run = async (): Promise<void> => {
       return;
     }
 
-    const parsedApprovalRules = JSON.parse(approvalRules) as ApprovalRule[];
-
     const payload = parseContext(context);
+
+    const { data } = await octokit.rest.repos.getContent({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      path: 'approval-rules.json',
+      ref: payload.base.ref,
+    });
+
+    if (Array.isArray(data) || data.type !== 'file') {
+      throw new Error('approval-rules.json is not a file');
+    }
+
+    const parsed: unknown = JSON.parse(Buffer.from(data.content, 'base64').toString());
+
+    const result = v.safeParse(ApprovalRulesSchema, parsed);
+    if (!result.success) {
+      const issues = v.flatten(result.issues);
+      throw new Error(`Invalid approval-rules.json: ${JSON.stringify(issues, null, 2)}`);
+    }
+    const parsedApprovalRules = result.output;
 
     const prMeta = {
       number: payload.number,

@@ -11,6 +11,7 @@ vi.mock("@actions/github", () => ({
       pull_request: {
         number: 123,
         head: { sha: "abc123", ref: "feature/test" },
+        base: { ref: "main" },
         user: { login: "author1" },
       },
     },
@@ -21,6 +22,16 @@ vi.mock("@actions/github", () => ({
   },
 }));
 vi.mock("./validator");
+
+const defaultRules = [{ name: "default", if: {}, requires: { count: 2 } }];
+
+const createMockGetContent = (content: unknown = defaultRules) =>
+  vi.fn().mockResolvedValue({
+    data: {
+      type: "file",
+      content: Buffer.from(JSON.stringify(content)).toString("base64"),
+    },
+  });
 
 describe("GitHub Action main", () => {
   const mockGetInput = vi.mocked(core.getInput);
@@ -37,9 +48,6 @@ describe("GitHub Action main", () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
         "github-token": "test-token",
-        "approval-rules": JSON.stringify([
-          { name: "default", if: {}, requires: { count: 2 } },
-        ]),
       };
       return inputs[name] || "";
     });
@@ -52,6 +60,7 @@ describe("GitHub Action main", () => {
         },
         repos: {
           createCommitStatus: vi.fn().mockResolvedValue({}),
+          getContent: createMockGetContent(),
         },
       },
     };
@@ -79,6 +88,114 @@ describe("GitHub Action main", () => {
     });
 
     expect(mockSetFailed).not.toHaveBeenCalled();
+  });
+
+  it("should fetch approval-rules.json from base branch", async () => {
+    const { validateApprovals } = await import("./validator");
+    vi.mocked(validateApprovals).mockReturnValue(null);
+
+    await import("./index");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockGetOctokit("test-token").rest.repos.getContent).toHaveBeenCalledWith({
+      owner: "test-owner",
+      repo: "test-repo",
+      path: "approval-rules.json",
+      ref: "main",
+    });
+  });
+
+  it("should fail when approval-rules.json is not found", async () => {
+    const mockOctokit = {
+      paginate: vi.fn().mockResolvedValue([]),
+      rest: {
+        pulls: {
+          listReviews: vi.fn(),
+        },
+        repos: {
+          createCommitStatus: vi.fn().mockResolvedValue({}),
+          getContent: vi.fn().mockRejectedValue(new Error("Not Found")),
+        },
+      },
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as any);
+
+    await import("./index");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockSetFailed).toHaveBeenCalledWith("Action failed: Not Found");
+  });
+
+  it("should fail when approval-rules.json is not an array", async () => {
+    const mockOctokit = {
+      paginate: vi.fn().mockResolvedValue([]),
+      rest: {
+        pulls: { listReviews: vi.fn() },
+        repos: {
+          createCommitStatus: vi.fn().mockResolvedValue({}),
+          getContent: createMockGetContent({ not: "an array" }),
+        },
+      },
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as any);
+
+    await import("./index");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockSetFailed).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid approval-rules.json"),
+    );
+    expect(mockSetFailed).toHaveBeenCalledWith(expect.stringContaining("Expected Array"));
+  });
+
+  it("should fail when a rule is missing required fields", async () => {
+    const mockOctokit = {
+      paginate: vi.fn().mockResolvedValue([]),
+      rest: {
+        pulls: { listReviews: vi.fn() },
+        repos: {
+          createCommitStatus: vi.fn().mockResolvedValue({}),
+          getContent: createMockGetContent([{ name: "bad-rule" }]),
+        },
+      },
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as any);
+
+    await import("./index");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockSetFailed).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid approval-rules.json"),
+    );
+    expect(mockSetFailed).toHaveBeenCalledWith(expect.stringContaining("requires"));
+  });
+
+  it("should fail when if condition has unknown keys (e.g. typo)", async () => {
+    const mockOctokit = {
+      paginate: vi.fn().mockResolvedValue([]),
+      rest: {
+        pulls: { listReviews: vi.fn() },
+        repos: {
+          createCommitStatus: vi.fn().mockResolvedValue({}),
+          getContent: createMockGetContent([
+            {
+              name: "typo-condition",
+              if: { form_branch: { pattern: "main" } },
+              requires: { count: 1 },
+            },
+          ]),
+        },
+      },
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as any);
+
+    await import("./index");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockSetFailed).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid approval-rules.json"),
+    );
+    expect(mockSetFailed).toHaveBeenCalledWith(expect.stringContaining("form_branch"));
   });
 
   it("should handle unexpected errors", async () => {
@@ -117,9 +234,6 @@ describe("GitHub Action with merge_group event", () => {
     mockGetInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
         "github-token": "test-token",
-        "approval-rules": JSON.stringify([
-          { name: "default", if: {}, requires: { count: 2 } },
-        ]),
       };
       return inputs[name] || "";
     });
@@ -132,6 +246,7 @@ describe("GitHub Action with merge_group event", () => {
         },
         repos: {
           createCommitStatus: vi.fn().mockResolvedValue({}),
+          getContent: createMockGetContent(),
         },
       },
     };
@@ -145,6 +260,7 @@ describe("GitHub Action with merge_group event", () => {
       pull_request: {
         number: 123,
         head: { sha: "abc123", ref: "feature/test" },
+        base: { ref: "main" },
         user: { login: "author1" },
       },
     };

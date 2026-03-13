@@ -14,6 +14,9 @@ importers:
       '@actions/github':
         specifier: 6.0.1
         version: 6.0.1
+      valibot:
+        specifier: 1.2.0
+        version: 1.2.0(typescript@5.9.3)
     devDependencies:
       '@biomejs/biome':
         specifier: 1.9.4
@@ -663,6 +666,14 @@ packages:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
 
+  valibot@1.2.0:
+    resolution: {integrity: sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   vite@7.3.0:
     resolution: {integrity: sha512-dZwN5L1VlUBewiP6H9s2+B3e3Jg96D0vzN+Ry73sOefebhYr9f94wwkMNN/9ouoU8pV1BqA1d1zGk8928cx0rg==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1251,6 +1262,10 @@ snapshots:
   universal-user-agent@6.0.1: {}
 
   uuid@8.3.2: {}
+
+  valibot@1.2.0(typescript@5.9.3):
+    optionalDependencies:
+      typescript: 5.9.3
 
   vite@7.3.0(@types/node@20.10.5):
     dependencies:

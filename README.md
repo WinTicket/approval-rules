@@ -13,6 +13,56 @@ API design is inspired by [policy-bot](https://github.com/palantir/policy-bot).
 
 ## Usage
 
+### 1. Create `approval-rules.json` in the repository root
+
+```json
+[
+  {
+    "name": "release-branch",
+    "if": {
+      "from_branch": {
+        "pattern": "^release/.*"
+      }
+    },
+    "requires": {
+      "count": 3
+    }
+  },
+  {
+    "name": "junior-developer",
+    "if": {
+      "has_author_in": {
+        "users": ["junior1", "junior2"]
+      }
+    },
+    "requires": {
+      "count": 2
+    }
+  },
+  {
+    "name": "docs-only",
+    "if": {
+      "only_changed_files": {
+        "paths": ["^docs/", "^\\.github/"]
+      }
+    },
+    "requires": {
+      "count": 1
+    }
+  },
+  {
+    "name": "default",
+    "requires": {
+      "count": 1
+    }
+  }
+]
+```
+
+The file is read from the **base branch** (e.g. `main`) via the GitHub API.
+
+### 2. Add the workflow
+
 ```yaml
 name: PR Approval Check
 
@@ -30,56 +80,13 @@ jobs:
         uses: WinTicket/approval-rules@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          approval-rules: |
-            [
-              {
-                "name": "release-branch",
-                "if": {
-                  "from_branch": {
-                    "pattern": "^release/.*"
-                  }
-                },
-                "requires": {
-                  "count": 3
-                }
-              },
-              {
-                "name": "junior-developer",
-                "if": {
-                  "has_author_in": {
-                    "users": ["junior1", "junior2"]
-                  }
-                },
-                "requires": {
-                  "count": 2
-                }
-              },
-              {
-                "name": "docs-only",
-                "if": {
-                  "only_changed_files": {
-                    "paths": ["^docs/", "^\\.github/"]
-                  }
-                },
-                "requires": {
-                  "count": 1
-                }
-              },
-              {
-                "name": "default",
-                "requires": {
-                  "count": 1
-                }
-              }
-            ]
 ```
 
 ## Inputs
 
-| Input            | Description                   | Required | Default               |
-| ---------------- | ----------------------------- | -------- | --------------------- |
-| `github-token`   | GitHub token for API access   | No       | `${{ github.token }}` |
-| `approval-rules` | JSON string of approval rules | Yes      | -                     |
+| Input          | Description                 | Required | Default               |
+| -------------- | --------------------------- | -------- | --------------------- |
+| `github-token` | GitHub token for API access | No       | `${{ github.token }}` |
 
 ## Approval Rules
 
@@ -182,6 +189,10 @@ Rules are evaluated in array order. The first rule that meets the approval condi
   }
 }
 ```
+
+## Limitations
+
+This action uses Commit Status to enforce approval rules. Since `GITHUB_TOKEN` has permission to create commit statuses, a PR author could potentially bypass the check by directly writing a success status via the API. If you need stronger guarantees against this, consider using [policy-bot](https://github.com/palantir/policy-bot), which runs as a separate GitHub App with its own credentials.
 
 ## Development
 

@@ -2,6 +2,7 @@ export interface RuleContext {
   fromBranch: string;
   author: string;
   changedFiles: string[];
+  labels: string[];
 }
 
 export interface RuleCondition<T = unknown> {

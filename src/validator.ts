@@ -41,6 +41,7 @@ export const validateApprovals = ({
     fromBranch: payload.head.ref,
     author: payload.user?.login ?? '',
     changedFiles,
+    labels: payload.labels?.map((label) => label.name) ?? [],
   };
 
   const isTarget = evaluateConditions(rule.if, context);

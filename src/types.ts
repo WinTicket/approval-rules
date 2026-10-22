@@ -11,6 +11,7 @@ export const ApprovalRuleSchema = v.strictObject({
     v.strictObject({
       from_branch: v.optional(v.strictObject({ pattern: v.string() })),
       has_author_in: v.optional(v.strictObject({ users: v.array(v.string()) })),
+      has_label_in: v.optional(v.strictObject({ labels: v.array(v.string()) })),
       only_changed_files: v.optional(v.strictObject({ paths: v.array(v.string()) })),
     })
   ),

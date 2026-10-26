@@ -35,3 +35,27 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Verify dist is up to date
+        run: git diff --exit-code dist/
+
+  release:
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: namespace-profile-xlarge
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+
+    steps:
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          latest=$(gh release view --json tagName --jq .tagName)
+          IFS=. read -r major minor patch <<< "${latest#v}"
+          next="v${major}.${minor}.$((patch + 1))"
+          gh release create "$next" --target "$GITHUB_SHA" --generate-notes

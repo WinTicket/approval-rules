@@ -1,11 +1,13 @@
 import { fromBranchCondition } from './from_branch';
 import { hasAuthorInCondition } from './has_author_in';
+import { hasLabelInCondition } from './has_label_in';
 import { onlyChangedFilesCondition } from './only_changed_files';
 import type { RuleCondition, RuleContext } from './types';
 
 const conditions: RuleCondition[] = [
   fromBranchCondition,
   hasAuthorInCondition,
+  hasLabelInCondition,
   onlyChangedFilesCondition,
 ];
 

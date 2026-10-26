@@ -29388,6 +29388,21 @@ exports.hasAuthorInCondition = {
 
 /***/ }),
 
+/***/ 4417:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.hasLabelInCondition = void 0;
+exports.hasLabelInCondition = {
+    name: 'has_label_in',
+    evaluate: (config, ctx) => config.labels.some((label) => ctx.labels.includes(label)),
+};
+
+
+/***/ }),
+
 /***/ 4835:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -29397,10 +29412,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.evaluateConditions = void 0;
 const from_branch_1 = __nccwpck_require__(887);
 const has_author_in_1 = __nccwpck_require__(2940);
+const has_label_in_1 = __nccwpck_require__(4417);
 const only_changed_files_1 = __nccwpck_require__(4370);
 const conditions = [
     from_branch_1.fromBranchCondition,
     has_author_in_1.hasAuthorInCondition,
+    has_label_in_1.hasLabelInCondition,
     only_changed_files_1.onlyChangedFilesCondition,
 ];
 const conditionRegistry = new Map(conditions.map((c) => [c.name, c]));
@@ -29486,6 +29503,7 @@ exports.ApprovalRuleSchema = v.strictObject({
     if: v.optional(v.strictObject({
         from_branch: v.optional(v.strictObject({ pattern: v.string() })),
         has_author_in: v.optional(v.strictObject({ users: v.array(v.string()) })),
+        has_label_in: v.optional(v.strictObject({ labels: v.array(v.string()) })),
         only_changed_files: v.optional(v.strictObject({ paths: v.array(v.string()) })),
     })),
     requires: v.strictObject({
@@ -29526,6 +29544,7 @@ const validateApprovals = ({ rule, reviews, payload, changedFiles, }) => {
         fromBranch: payload.head.ref,
         author: payload.user?.login ?? '',
         changedFiles,
+        labels: payload.labels?.map((label) => label.name) ?? [],
     };
     const isTarget = (0, rules_1.evaluateConditions)(rule.if, context);
     // NOTE: matches nothing when if is set but none of the conditions are met

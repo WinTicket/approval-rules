@@ -7,7 +7,7 @@ API design is inspired by [policy-bot](https://github.com/palantir/policy-bot).
 ## Features
 
 - Define multiple approval rules
-- Conditional rules (branch name patterns, author lists, changed file patterns)
+- Conditional rules (branch name patterns, author lists, labels, changed file patterns)
 - Uses only the latest review status per user
 - Creates Commit Status to show approval status
 
@@ -51,6 +51,17 @@ API design is inspired by [policy-bot](https://github.com/palantir/policy-bot).
     }
   },
   {
+    "name": "hotfix",
+    "if": {
+      "has_label_in": {
+        "labels": ["hotfix", "urgent"]
+      }
+    },
+    "requires": {
+      "count": 1
+    }
+  },
+  {
     "name": "default",
     "requires": {
       "count": 1
@@ -70,7 +81,7 @@ on:
   pull_request_review:
     types: [submitted, dismissed]
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, labeled, unlabeled]
 
 jobs:
   check-approvals:
@@ -102,6 +113,9 @@ Each rule has the following structure:
     "has_author_in": {
       "users": ["string"]
     },
+    "has_label_in": {
+      "labels": ["string"]
+    },
     "only_changed_files": {
       "paths": ["string (regex)"]
     }
@@ -116,6 +130,7 @@ Each rule has the following structure:
 - `if`: Conditions (optional, omit to match all PRs)
   - `from_branch.pattern`: Regex pattern for branch name
   - `has_author_in.users`: List of usernames
+  - `has_label_in.labels`: List of label names; matches when any of them is attached to the PR
   - `only_changed_files.paths`: List of regex patterns matched against changed file paths
 - `requires.count`: Required number of approvals
 
@@ -124,8 +139,12 @@ Each rule has the following structure:
 - `if` omitted or empty: Matches all PRs
 - `from_branch` only: Applies when branch name matches the pattern
 - `has_author_in` only: Applies when PR author is in the list
+- `has_label_in` only: Applies when any of the specified labels is attached to the PR
 - `only_changed_files` only: Applies when all changed files match at least one of the patterns
 - Multiple conditions set: Applies when all conditions are met
+
+> [!NOTE]
+> When using `has_label_in`, add `labeled` and `unlabeled` to the `pull_request` event types so the action re-runs when labels change.
 
 Rules are evaluated in array order. The first rule that meets the approval condition creates a Commit Status.
 
@@ -171,6 +190,22 @@ Rules are evaluated in array order. The first rule that meets the approval condi
   "if": {
     "only_changed_files": {
       "paths": ["^docs/", "\\.md$"]
+    }
+  },
+  "requires": {
+    "count": 1
+  }
+}
+```
+
+**Require only 1 approval for PRs labeled `hotfix` or `urgent`:**
+
+```json
+{
+  "name": "hotfix",
+  "if": {
+    "has_label": {
+      "names": ["hotfix", "urgent"]
     }
   },
   "requires": {
